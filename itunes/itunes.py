@@ -65,7 +65,7 @@ def search(search_term):
     applescript_call = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     out, err = applescript_call.communicate()
-    if (err):
+    if err:
         print("ERROR: ", err)
 
     out = out.decode("utf-8")
@@ -88,9 +88,45 @@ def parse_applescript(raw):
     dict
         A dictionary whose keys are a subset of those provided in `raw`.
 
+    Raises
+    ------
+    ValueError
+        If a record is malformed.
+
     .. note:: This function currently uses a naive implementation that will not
     work properly if characters such as `,` or `:` are in the values of `raw`.
     """
+
+    records = []
+
+    raw = raw.strip()
+
+    # more than one opening brace = list of records
+    if raw.startswith("{{") and raw.endswith("}}"):
+        raw = "[" + raw[1:]
+        raw = raw[:-2] + "]"
+
+    #print("RAW:", raw)
+
+    open_brace_pos = raw.find("{")
+    close_brace_pos = raw.find("}")
+
+    # we found a pair of braces, start a record
+    if open_brace_pos != -1 and close_brace_pos != -1:
+        record = {}
+        record_str = raw[open_brace_pos + 1:close_brace_pos]
+        print("RECORD_STR:",record_str)
+
+        # go through each key value pair in the record
+        for item in record_str.split(", "):
+
+            # never a `:` in key, so use that to split
+            colon_pos = item.find(":")
+            if colon_pos != -1:
+                key = item[:colon_pos].strip()
+                value = item[colon_pos + 1:].strip()
+            else:
+                raise ValueError("Unable to parse item: {0}".format(item))
 
     # private method to (attempt to) parse values into their proper type
     def parse_value(str_value):
