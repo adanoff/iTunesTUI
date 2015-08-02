@@ -52,8 +52,6 @@ def search(search_term):
     #end tell"""
 
     print(search_template.format(term=search_term))
-    #TODO figure out how the fuck to get applescript result into usable form
-    #TODO remember that NONE of the keys are quoted - might make things a bit easier
 
     # -ss flag for JSON-like form
     command = ["osascript", "-ss"]
@@ -131,6 +129,24 @@ def parse_applescript(raw):
 
 # private method to (attempt to) parse values into their proper type
 def parse_value(str_value):
+    """
+    Parse a string (from AppleScript response) into an equivalent Python type.
+
+    This function parses a string into whatever Python type it looks most like.
+    The patters it checks are based on what AppleScript spits out when it
+    returns responses. It currently supports int, float, bool, date, and None.
+
+    Parameters
+    ----------
+    str_value : str
+        A string containing the value to be parsed.
+
+    Returns
+    -------
+    <t>
+        A Python type (int, float, bool, etc) with the same value as
+        `str_value`. If no suitable match is found, `str_value` is returned.
+    """
 
     # check for None, int, float, bool, and date
     if not str_value or str_value == "missing value" or str_value == '""':
