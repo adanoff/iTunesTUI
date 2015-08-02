@@ -92,8 +92,30 @@ def parse_applescript(raw):
     work properly if characters such as `,` or `:` are in the values of `raw`.
     """
 
-    print(raw)
-    pass
+    # private method to (attempt to) parse values into their proper type
+    def parse_value(str_value):
+
+        # check for None, int, float, and bool
+        if not str_value or str_value == "missing value":
+            result = None
+
+        elif str_value.isdigit():
+            result = int(str_value)
+
+        elif "." in str_value: # might be a float
+            dot_pos = str_value.find(".")
+
+            if (str_value[:dot_pos].isdigit() and str_value[dot_pos +
+                    1:].isdigit()):
+                result = float(str_value)
+
+        elif str_value == "true" or str_value == "false":
+            result = bool(str_value)
+
+        else:
+            result = str_value
+
+        return result
 
 def main():
     search("just a friend")
