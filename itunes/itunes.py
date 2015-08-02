@@ -132,7 +132,7 @@ def parse_applescript(raw):
 def parse_value(str_value):
 
     # check for None, int, float, and bool
-    if not str_value or str_value == "missing value":
+    if not str_value or str_value == "missing value" or str_value == '""':
         result = None
 
     elif str_value.isdigit():
