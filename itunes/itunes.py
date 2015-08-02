@@ -9,6 +9,7 @@ required by the program.
 """
 
 from subprocess import Popen, PIPE
+from datetime import datetime
 import json
 
 def search(search_term):
@@ -131,7 +132,7 @@ def parse_applescript(raw):
 # private method to (attempt to) parse values into their proper type
 def parse_value(str_value):
 
-    # check for None, int, float, and bool
+    # check for None, int, float, bool, and date
     if not str_value or str_value == "missing value" or str_value == '""':
         result = None
 
@@ -147,6 +148,16 @@ def parse_value(str_value):
 
     elif str_value == "true" or str_value == "false":
         result = True if str_value == "true" else False
+
+    elif str_value.startswith("date"):
+        open_quote = str_value.find('"')
+        close_quote = str_value.rfind('"')
+
+        # make sure there are quotes around the date
+        if open_quote != -1 and close_quote != -1:
+            date_str = str_value[open_quote + 1:close_quote]
+            date_fmt = "%A, %B %d, %Y at %I:%M:%S %p" # wkday, m d, y at time
+            result = datetime.strptime(date_str, date_fmt)
 
     else:
         result = str_value
