@@ -22,4 +22,5 @@ class ITunesTests(unittest.TestCase):
         self.assertTrue(parse_value("true"))
         self.assertFalse(parse_value("false"))
         self.assertIsNone(parse_value(""))
+        self.assertIsNone(parse_value('""'))
         self.assertIsNone(parse_value("missing value"))
