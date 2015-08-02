@@ -8,6 +8,7 @@ This file tests the functionality provided by the itunes module.
 """
 
 import unittest
+from datetime import datetime
 
 from itunes.itunes import parse_value
 
@@ -24,3 +25,5 @@ class ITunesTests(unittest.TestCase):
         self.assertIsNone(parse_value(""))
         self.assertIsNone(parse_value('""'))
         self.assertIsNone(parse_value("missing value"))
+        self.assertEquals(parse_value('date: "Saturday, March 13, 2010 at ' \
+            '5:02:22 PM"'), datetime.fromtimestamp(1268517742))
