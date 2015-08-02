@@ -128,30 +128,30 @@ def parse_applescript(raw):
             else:
                 raise ValueError("Unable to parse item: {0}".format(item))
 
-    # private method to (attempt to) parse values into their proper type
-    def parse_value(str_value):
+# private method to (attempt to) parse values into their proper type
+def parse_value(str_value):
 
-        # check for None, int, float, and bool
-        if not str_value or str_value == "missing value":
-            result = None
+    # check for None, int, float, and bool
+    if not str_value or str_value == "missing value":
+        result = None
 
-        elif str_value.isdigit():
-            result = int(str_value)
+    elif str_value.isdigit():
+        result = int(str_value)
 
-        elif "." in str_value: # might be a float
-            dot_pos = str_value.find(".")
+    elif "." in str_value: # might be a float
+        dot_pos = str_value.find(".")
 
-            if (str_value[:dot_pos].isdigit() and str_value[dot_pos +
-                    1:].isdigit()):
-                result = float(str_value)
+        if (str_value[:dot_pos].isdigit() and str_value[dot_pos +
+                1:].isdigit()):
+            result = float(str_value)
 
-        elif str_value == "true" or str_value == "false":
-            result = bool(str_value)
+    elif str_value == "true" or str_value == "false":
+        result = True if str_value == "true" else False
 
-        else:
-            result = str_value
+    else:
+        result = str_value
 
-        return result
+    return result
 
 def main():
     search("just a friend")
