@@ -175,8 +175,8 @@ def parse_value(str_value):
             date_fmt = "%A, %B %d, %Y at %I:%M:%S %p" # wkday, m d, y at time
             result = datetime.strptime(date_str, date_fmt)
 
-    else:
-        result = str_value
+    else: # assumed to be a string, remove any quotes
+        result = str_value.replace('"', "")
 
     return result
 
