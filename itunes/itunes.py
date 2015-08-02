@@ -11,6 +11,7 @@ required by the program.
 from subprocess import Popen, PIPE
 from datetime import datetime
 import json
+import re
 
 def search(search_term):
     """
@@ -74,9 +75,6 @@ def parse_applescript(raw):
     """
     Parse the result of an applescript call into a python dictionary.
 
-    The raw response will be parsed as fully as possible, however the returned
-    dictionary is not guaranteed to contain all of the information in `raw`.
-
     Parameters
     ----------
     raw : str
@@ -91,9 +89,6 @@ def parse_applescript(raw):
     ------
     ValueError
         If a record is malformed.
-
-    .. note:: This function currently uses a naive implementation that will not
-    work properly if characters such as `,` or `:` are in the values of `raw`.
     """
 
     records = []
@@ -103,31 +98,48 @@ def parse_applescript(raw):
     # more than one opening brace = list of records
     if raw.startswith("{{") and raw.endswith("}}"):
         raw = "[" + raw[1:]
-        raw = raw[:-2] + "]"
+        raw = raw[:-1] + "]"
 
     #print("RAW:", raw)
 
-    open_brace_pos = raw.find("{")
-    close_brace_pos = raw.find("}")
+    record_regex = re.compile(r'{(?P<record>.*?)}')
 
-    # we found a pair of braces, start a record
-    if open_brace_pos != -1 and close_brace_pos != -1:
+    # go through each record
+    for match in record_regex.finditer(raw):
         record = {}
-        record_str = raw[open_brace_pos + 1:close_brace_pos]
-        print("RECORD_STR:",record_str)
+        record_str = match.group("record")
+        #print("RECORD_STR:",record_str, "\n")
+
+        # matches commas not in quotes
+        #
+        # works because a comma in quotes can never be followed ONLY by
+        # nonquotes or correctly quoted strings until the end of the line (since
+        # one quote has by necessity already passed if it's in a quote)
+        item_regex = re.compile(r',(?=(?:[^"]|"[^"]*")*$)')
 
         # go through each key value pair in the record
-        for item in record_str.split(", "):
+        for item in item_regex.split(record_str):
+
+            item = item.strip()
+            #print(repr(item))
 
             # never a `:` in key, so use that to split
             colon_pos = item.find(":")
             if colon_pos != -1:
                 key = item[:colon_pos].strip()
                 value = item[colon_pos + 1:].strip()
+                #print(repr(value))
+
             else:
                 raise ValueError("Unable to parse item: {0}".format(item))
 
-# private method to (attempt to) parse values into their proper type
+            record["{0}".format(key)] = parse_value(value)
+
+        records.append(record)
+
+    #print(records)
+    return records
+
 def parse_value(str_value):
     """
     Parse a string (from AppleScript response) into an equivalent Python type.
