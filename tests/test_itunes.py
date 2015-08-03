@@ -10,7 +10,8 @@ This file tests the functionality provided by the itunes module.
 import unittest
 from datetime import datetime
 
-from itunes.itunes import parse_value
+from itunes.itunes import parse_value, run_applescript
+from itunes.exceptions import AppleScriptError
 
 class ITunesTests(unittest.TestCase):
     """
@@ -27,3 +28,7 @@ class ITunesTests(unittest.TestCase):
         self.assertIsNone(parse_value("missing value"))
         self.assertEquals(parse_value('date: "Saturday, March 13, 2010 at ' \
             '5:02:22 PM"'), datetime.fromtimestamp(1268517742))
+
+    def test_run_applescript(self):
+        self.assertRaises(AppleScriptError, run_applescript, "THIS IS INVALID" \
+            " APPLESCRIPT")
