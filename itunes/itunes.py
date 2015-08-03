@@ -51,6 +51,18 @@ def search(search_term):
 
     return out
 
+def playpause():
+    """
+    Toggle play state of iTunes.
+    """
+
+    playpause_script = """tell application "iTunes"
+    playpause
+    end tell
+    """
+
+    run_applescript(playpause_script)
+
 def run_applescript(script):
     """
     Run the given piece of AppleScript in a separate process.
@@ -217,6 +229,7 @@ def parse_value(str_value):
 
 def main():
     search("just a friend")
+    playpause()
 
 if __name__ == '__main__':
     main()
