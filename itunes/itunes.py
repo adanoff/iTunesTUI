@@ -13,7 +13,7 @@ from datetime import datetime
 import json
 import re
 
-from exceptions import AppleScriptError
+from .exceptions import AppleScriptError
 
 def search(search_term):
     """
