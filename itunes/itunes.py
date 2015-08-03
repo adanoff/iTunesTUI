@@ -69,21 +69,21 @@ def search(search_term):
         print("ERROR: ", err)
 
     out = out.decode("utf-8")
-    out = parse_applescript(out)
+    out = parse_response(out)
 
-def parse_applescript(raw):
+def parse_response(response):
     """
     Parse the result of an applescript call into a python dictionary.
 
     Parameters
     ----------
-    raw : str
+    response : str
         A string containing the unprocessed applescript output.
 
     Returns
     -------
     dict
-        A dictionary whose keys are a subset of those provided in `raw`.
+        A dictionary whose keys are a subset of those provided in `response`.
 
     Raises
     ------
@@ -93,19 +93,19 @@ def parse_applescript(raw):
 
     records = []
 
-    raw = raw.strip()
+    response = response.strip()
 
     # more than one opening brace = list of records
-    if raw.startswith("{{") and raw.endswith("}}"):
-        raw = "[" + raw[1:]
-        raw = raw[:-1] + "]"
+    if response.startswith("{{") and response.endswith("}}"):
+        response = "[" + response[1:]
+        response = response[:-1] + "]"
 
-    #print("RAW:", raw)
+    #print("RAW:", response)
 
     record_regex = re.compile(r'{(?P<record>.*?)}')
 
     # go through each record
-    for match in record_regex.finditer(raw):
+    for match in record_regex.finditer(response):
         record = {}
         record_str = match.group("record")
         #print("RECORD_STR:",record_str, "\n")
