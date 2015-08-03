@@ -25,6 +25,9 @@ COMMAND_MAP = {
 """Constant for error color pair."""
 ERROR_PAIR = 1
 
+"""Constant for prompt color pair."""
+PROMPT_PAIR = 2
+
 def main(stdscr):
     """
     Main controller function for the TUI.
@@ -46,6 +49,7 @@ def main(stdscr):
     COMMAND_LINE = curses.LINES - 1
 
     curses.init_pair(ERROR_PAIR, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(PROMPT_PAIR, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
     stdscr.addstr(0, 0, "Hello, world!")
     stdscr.refresh()
@@ -100,6 +104,45 @@ def command_mode(window, line=0, col=0):
     curses.noecho()
 
     return COMMAND_MAP.get(command, STATUS_CODES.ERROR)
+
+def prompt_mode(window, prompt=":", line=0, col=0):
+    """
+    Prompt the user for further information.
+
+    This function is intended to be used to get more information from the user
+    in order to complete some task. For example, after the search command is
+    issued, a prompt would be used to allow the user to enter the search term.
+    The prompt will be displayed in a different color.
+
+    Parameters
+    ----------
+    window : curses.WindowObject
+        The window in which the prompt should be displayed.
+    prompt : str
+        The string to prompt the user with (defaults to `:`).
+    line : int
+        The line in `window` in which to display the prompt (defaults to 0 (top)).
+    col : int
+        The column in `line` in which to start the prompt (defaults to 0 (left)).
+
+    Returns
+    -------
+    str
+        The user's response to the prompt, stripped of leading and trailing
+        whitespace.
+    """
+
+    prompt = prompt.strip()
+
+    curses.echo()
+    window.clear()
+    window.addstr(line, col, prompt, curses.color_pair(PROMPT_PAIR) |
+            curses.A_BOLD)
+    response = window.getstr(line, col + 1 + len(prompt))
+    response = response.decode("utf-8").lower()
+    curses.noecho()
+
+    return response
 
 if __name__ == '__main__':
     curses.wrapper(main)
