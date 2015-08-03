@@ -10,8 +10,8 @@ This file tests the functionality provided by the itunes module.
 import unittest
 from datetime import datetime
 
-from itunes.itunes import parse_value, run_applescript
-from itunes.exceptions import AppleScriptError
+from itunes.itunes import parse_value, run_applescript, play_track
+from itunes.exceptions import AppleScriptError, TrackError
 
 class ITunesTests(unittest.TestCase):
     """
@@ -32,3 +32,6 @@ class ITunesTests(unittest.TestCase):
     def test_run_applescript(self):
         self.assertRaises(AppleScriptError, run_applescript, "THIS IS INVALID" \
             " APPLESCRIPT")
+
+    def test_play_track(self):
+        self.assertRaises(TrackError, play_track, "~~~~---`-`-`")
