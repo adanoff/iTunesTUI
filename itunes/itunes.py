@@ -13,7 +13,7 @@ from datetime import datetime
 import json
 import re
 
-from .exceptions import AppleScriptError
+from .exceptions import AppleScriptError, TrackError
 
 def search(search_term):
     """
@@ -90,6 +90,31 @@ def playpause():
     """
 
     run_applescript(playpause_script)
+
+def play_track(title):
+    """
+    Play the track indicated by `title`.
+
+    Parameter
+    ---------
+    title : str
+        The title of the track to play.
+
+    Raises
+    ------
+    TrackError
+        If `track` cannot be played.
+    """
+
+    script = """tell application "iTunes"
+    play track "{0}"
+    end tell
+    """
+
+    try:
+        run_applescript(script.format(title))
+    except AppleScriptError as ae:
+        raise TrackError("No track named: {0}".format(title), title)
 
 def run_applescript(script):
     """
@@ -260,6 +285,6 @@ def main():
     play()
     pause()
     playpause()
-
+    play_track("Just a Friend")
 if __name__ == '__main__':
     main()
