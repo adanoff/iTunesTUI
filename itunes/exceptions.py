@@ -36,3 +36,25 @@ class AppleScriptError(ITunesError):
 
         super(AppleScriptError, self).__init__(message)
         self.script = script
+
+class TrackError(ITunesError):
+    """
+    Represents an error in finding or playing a track.
+
+    Parameters
+    ----------
+    message : str
+        The message that the exception will hold.
+    title : str
+        The title of the track that caused the error (default "").
+
+    Attributes
+    ----------
+    title : str
+        The title of the track that caused the error.
+    """
+
+    def __init__(self, message, title=""):
+
+        super(TrackError, self).__init__(message)
+        self.title = title
