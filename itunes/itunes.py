@@ -51,6 +51,34 @@ def search(search_term):
 
     return out
 
+def play():
+    """
+    Play the current track.
+
+    This function does not change what track is playing.
+    """
+
+    play_script = """tell application "iTunes"
+    play
+    end tell
+    """
+
+    run_applescript(play_script)
+
+def pause():
+    """
+    Pause the current track.
+
+    This function does not change what track is playing.
+    """
+
+    pause_script = """tell application "iTunes"
+    pause
+    end tell
+    """
+
+    run_applescript(pause_script)
+
 def playpause():
     """
     Toggle play state of iTunes.
@@ -229,6 +257,8 @@ def parse_value(str_value):
 
 def main():
     search("just a friend")
+    play()
+    pause()
     playpause()
 
 if __name__ == '__main__':
