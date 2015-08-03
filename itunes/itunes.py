@@ -82,8 +82,8 @@ def parse_response(response):
 
     Returns
     -------
-    dict
-        A dictionary whose keys are a subset of those provided in `response`.
+    list
+        A list of dictionaries which contain the information in `response`.
 
     Raises
     ------
