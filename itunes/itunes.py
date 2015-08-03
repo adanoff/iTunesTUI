@@ -31,12 +31,7 @@ def search(search_term):
         A list containing the search results.
     """
 
-    search_template = """tell application "iTunes"
-    set music to playlist "Music"
-    log (search music for "{term}")
-    end tell"""
-
-    #use {{}} so as not to break str.format
+    # use {{}} so as not to break str.format
     search_template = """tell application "iTunes"
     set toRet to {{}}
     set searchResults to search playlist "Music" for "{term}"
@@ -47,12 +42,7 @@ def search(search_term):
     return toRet
     end tell"""
 
-    #search_template = """tell application "iTunes"
-    #activate
-    #display dialog "test"
-    #end tell"""
-
-    print(search_template.format(term=search_term))
+    #print(search_template.format(term=search_term) + "\n")
 
     # -ss flag for JSON-like form
     command = ["osascript", "-ss"]
@@ -61,15 +51,17 @@ def search(search_term):
     for line in search_template.format(term=search_term).split('\n'):
         command.append('-e')
         command.append(line.strip())
-    print("COMMAND: {0}".format(' '.join(command)))
+    #print("COMMAND: {0}".format(' '.join(command)))
     applescript_call = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     out, err = applescript_call.communicate()
     if err:
-        print("ERROR: ", err)
+        print("ERROR:", err)
 
     out = out.decode("utf-8")
     out = parse_response(out)
+
+    return out
 
 def parse_response(response):
     """
