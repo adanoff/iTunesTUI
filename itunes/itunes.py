@@ -13,6 +13,8 @@ from datetime import datetime
 import json
 import re
 
+from exceptions import AppleScriptError
+
 def search(search_term):
     """
     Search the iTunes library.
@@ -44,22 +46,51 @@ def search(search_term):
 
     #print(search_template.format(term=search_term) + "\n")
 
+    out = run_applescript(search_template.format(term=search_term))
+    out = parse_response(out)
+
+    return out
+
+def run_applescript(script):
+    """
+    Run the given piece of AppleScript in a separate process.
+
+    Parameters
+    ----------
+    script : str
+        A string representing the script to run. The script should be written
+        (using a triple-quoted string) with each statement on its own line.
+        Indentation does not matter.
+
+    Returns
+    -------
+    str
+        The raw response from running `script`. No processessing is
+        done before this value is returned.
+
+    Raises
+    ------
+    AppleScriptException
+        If `script` causes any AppleScript errors.
+    """
+
     # -ss flag for JSON-like form
     command = ["osascript", "-ss"]
 
     # break script up into different lines
-    for line in search_template.format(term=search_term).split('\n'):
+    for line in script.split('\n'):
         command.append('-e')
         command.append(line.strip())
     #print("COMMAND: {0}".format(' '.join(command)))
     applescript_call = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     out, err = applescript_call.communicate()
-    if err:
-        print("ERROR:", err)
 
     out = out.decode("utf-8")
-    out = parse_response(out)
+    err = err.decode("utf-8")
+
+    if err:
+        raise AppleScriptError("Error parsing script: {0}".format(err), script)
 
     return out
 
