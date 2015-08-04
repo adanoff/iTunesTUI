@@ -51,6 +51,41 @@ def search(search_term):
 
     return out
 
+def get_playlist(name="Music"):
+    """
+    Get all the songs in the playlist specified.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name of the playlist (defaults to "Music", which contains all
+        music).
+
+    Returns
+    -------
+    list
+        A list containing dictionaries, each of which represents a track in
+        `playlist`.
+
+    Raises
+    ------
+    PlaylistError
+        If the playlist cannot be loaded.
+    """
+
+    playlist_template = """tell application "iTunes"
+    return properties of tracks in playlist named "{name}"
+    end tell"""
+
+    try:
+        out = run_applescript(playlist_template.format(name=name))
+    except AppleScriptError as ae:
+        raise PlaylistError("No playlist named: {0}".format(name), name)
+
+    out = parse_response(out)
+
+    return out
+
 def play():
     """
     Play the current track.

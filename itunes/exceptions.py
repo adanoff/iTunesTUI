@@ -58,3 +58,25 @@ class TrackError(ITunesError):
 
         super(TrackError, self).__init__(message)
         self.title = title
+
+class PlaylistError(ITunesError):
+    """
+    Represents an error in finding or playing a playlist.
+
+    Parameters
+    ----------
+    message : str
+        The message that the exception will hold.
+    title : str
+        The title of the playlist that caused the error (default "").
+
+    Attributes
+    ----------
+    title : str
+        The title of the playlist that caused the error.
+    """
+
+    def __init__(self, message, title=""):
+
+        super(PlaylistError, self).__init__(message)
+        self.title = title
