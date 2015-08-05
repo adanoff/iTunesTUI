@@ -52,15 +52,21 @@ def main(stdscr):
     RIGHT = curses.COLS - 1
     COMMAND_LINE = curses.LINES - 1
 
+    # initialize color pairs
     curses.init_pair(COLOR_PAIRS["ERROR"], curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(COLOR_PAIRS["PROMPT"], curses.COLOR_CYAN, curses.COLOR_BLACK)
     curses.init_pair(COLOR_PAIRS["STATUS"], curses.COLOR_GREEN, curses.COLOR_BLACK)
 
-    stdscr.refresh()
-
     command_win = curses.newwin(1, curses.COLS, COMMAND_LINE, LEFT)
 
     command = None
+
+    stdscr.addstr(0, 0, "Hello, world!")
+    stdscr.refresh()
+
+    status_message(command_win, "Fetching music...")
+    display_list = itunes.get_playlist()
+    status_message(command_win, "Got music.")
 
     # continue until quit command is given
     while command != STATUS_CODES.EXIT:
@@ -69,13 +75,13 @@ def main(stdscr):
 
         # user wants to enter a command
         if key == ":":
-            command = command_mode(command_win)
             cursor_pos = stdscr.getyx()
+            command = command_mode(command_win)
 
             # tell user they have entered an invalid command
             if command == STATUS_CODES.ERROR:
-                stdscr.addstr(COMMAND_LINE, 0, "Invalid command entered",
-                        curses.color_pair(COLOR_PAIRS["ERROR"]))
+                status_message(command_win, "Invalid command entered",
+                        color=COLOR_PAIRS["ERROR"])
                 stdscr.move(*cursor_pos)
             elif command == STATUS_CODES.SEARCH:
                 pass
@@ -148,6 +154,41 @@ def prompt_mode(window, prompt=":", line=0, col=0):
     curses.noecho()
 
     return response
+
+def status_message(window, message, color=COLOR_PAIRS["STATUS"], line=0, col=0):
+    """
+    Display a status message to the user.
+
+    This function shows the user a status message in the specified window and
+    then returns the cursor to its position before the function was called.
+
+    Parameters
+    ----------
+    window : curses.WindowObject
+        The window in which the status message should be displayed.
+    message : str
+        The status message to display.
+    color : int, optional
+        The index number of the curses color pair to use for the message.
+        Defaults to the `status` color pair.
+    line : int, optional
+        The line in `window` in which to display the message. Defaults to 0,
+        which is the top of the window.
+    col : int, optional
+        The column in `line` to start display of the message. Defaults to 0,
+        which is the beginning of the line.
+    """
+
+    message = message.strip()
+
+    cursor_pos = curses.getsyx()
+
+    window.clear()
+    window.addstr(line, col, message, curses.color_pair(color))
+    window.refresh()
+
+    curses.setsyx(*cursor_pos)
+    curses.doupdate()
 
 if __name__ == '__main__':
     curses.wrapper(main)
