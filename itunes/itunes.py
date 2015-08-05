@@ -261,7 +261,7 @@ def parse_response(response):
             else:
                 raise ValueError("Unable to parse item: {0}".format(item))
 
-            parse = parse_value(value)
+            parsed = parse_value(value)
             record["{0}".format(key)] = parsed
             #log_file.write(("{!r} -> {!r}\n".format(value, parsed)))
 
