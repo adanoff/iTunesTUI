@@ -227,11 +227,17 @@ def parse_response(response):
 
     record_regex = re.compile(r'{(?P<record>.*?)}')
 
+    #log_file = open("out.log", "w")
+
     # go through each record
     for match in record_regex.finditer(response):
         record = {}
         record_str = match.group("record")
         #print("RECORD_STR:",record_str, "\n")
+
+        # remove escaped quotes from records
+        if '\\"' in record_str:
+            record_str = record_str.replace('\\"', "&quot;")
 
         # matches commas not in quotes
         #
@@ -251,16 +257,17 @@ def parse_response(response):
             if colon_pos != -1:
                 key = item[:colon_pos].strip()
                 value = item[colon_pos + 1:].strip()
-                #print(repr(value))
 
             else:
                 raise ValueError("Unable to parse item: {0}".format(item))
 
-            record["{0}".format(key)] = parse_value(value)
+            parse = parse_value(value)
+            record["{0}".format(key)] = parsed
+            #log_file.write(("{!r} -> {!r}\n".format(value, parsed)))
 
         records.append(record)
 
-    #print(records)
+    #log_file.close()
     return records
 
 def parse_value(str_value):
@@ -284,13 +291,15 @@ def parse_value(str_value):
     """
 
     # check for None, int, float, bool, and date
-    if not str_value or str_value == "missing value" or str_value == '""':
+    if (not str_value or str_value == "missing value" or str_value == '""' or
+            str_value == "none"):
         result = None
 
     elif str_value.isdigit():
         result = int(str_value)
 
-    elif "." in str_value: # might be a float
+    elif ("." in str_value and str_value.strip().count(" ") == 0 and
+            str_value.count(".") == 1 and '"' not in str_value): # might be a float
         dot_pos = str_value.find(".")
 
         if (str_value[:dot_pos].isdigit() and str_value[dot_pos +
@@ -310,8 +319,9 @@ def parse_value(str_value):
             date_fmt = "%A, %B %d, %Y at %I:%M:%S %p" # wkday, m d, y at time
             result = datetime.strptime(date_str, date_fmt)
 
-    else: # assumed to be a string, remove any quotes
+    else: # assumed to be a string, remove any quotes (and add back escaped)
         result = str_value.replace('"', "")
+        result = result.replace("&quot;", '"')
 
     return result
 
