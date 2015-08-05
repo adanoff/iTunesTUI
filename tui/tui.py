@@ -14,19 +14,23 @@ from enum import Enum
 from itunes import itunes
 
 """Status codes returned by `command_mode` to indicate an action."""
-STATUS_CODES = Enum("StatusCodes", 'EXIT ERROR SEARCH')
+STATUS_CODES = Enum("StatusCodes", "EXIT ERROR SEARCH")
 
 """Mapping of commands to actions."""
 COMMAND_MAP = {
         "q": STATUS_CODES.EXIT,
-        "quit": STATUS_CODES.EXIT
+        "quit": STATUS_CODES.EXIT,
+        "s": STATUS_CODES.SEARCH,
+        "search": STATUS_CODES.SEARCH
 }
 
-"""Constant for error color pair."""
-ERROR_PAIR = 1
-
-"""Constant for prompt color pair."""
-PROMPT_PAIR = 2
+"""Color pair codes for various types of output."""
+COLOR_PAIRS = {
+        "NORMAL": 0,
+        "ERROR": 1,
+        "PROMPT": 2,
+        "STATUS": 3
+}
 
 def main(stdscr):
     """
@@ -48,10 +52,10 @@ def main(stdscr):
     RIGHT = curses.COLS - 1
     COMMAND_LINE = curses.LINES - 1
 
-    curses.init_pair(ERROR_PAIR, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(PROMPT_PAIR, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["ERROR"], curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["PROMPT"], curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["STATUS"], curses.COLOR_GREEN, curses.COLOR_BLACK)
 
-    stdscr.addstr(0, 0, "Hello, world!")
     stdscr.refresh()
 
     command_win = curses.newwin(1, curses.COLS, COMMAND_LINE, LEFT)
@@ -70,7 +74,8 @@ def main(stdscr):
 
             # tell user they have entered an invalid command
             if command == STATUS_CODES.ERROR:
-                stdscr.addstr(COMMAND_LINE, 0, "Invalid command entered", curses.color_pair(ERROR_PAIR))
+                stdscr.addstr(COMMAND_LINE, 0, "Invalid command entered",
+                        curses.color_pair(COLOR_PAIRS["ERROR"]))
                 stdscr.move(*cursor_pos)
             elif command == STATUS_CODES.SEARCH:
                 pass
@@ -136,7 +141,7 @@ def prompt_mode(window, prompt=":", line=0, col=0):
 
     curses.echo()
     window.clear()
-    window.addstr(line, col, prompt, curses.color_pair(PROMPT_PAIR) |
+    window.addstr(line, col, prompt, curses.color_pair(COLOR_PAIRS["PROMPT"]) |
             curses.A_BOLD)
     response = window.getstr(line, col + 1 + len(prompt))
     response = response.decode("utf-8").lower()
