@@ -75,17 +75,45 @@ def main(stdscr):
 
         # user wants to enter a command
         if key == ":":
-            cursor_pos = stdscr.getyx()
             command = command_mode(command_win)
 
             # tell user they have entered an invalid command
             if command == STATUS_CODES.ERROR:
                 status_message(command_win, "Invalid command entered",
                         color=COLOR_PAIRS["ERROR"])
-                stdscr.move(*cursor_pos)
-            elif command == STATUS_CODES.SEARCH:
-                pass
 
+            elif command == STATUS_CODES.SEARCH:
+                search_term = prompt_mode(command_win, prompt="Enter a search term: ")
+
+def reset_cursor(func):
+    """
+    Decorator for functions that should not move the cursor permanently.
+
+    After any function with this decorator is called, the cursor will be placed
+    in the same spot it was in before the call.
+
+    Parameters
+    ----------
+    func : function
+        The function to decorate.
+
+    Returns
+    -------
+    function
+        The decorated function.
+    """
+
+    # store cursor, call function, replace cursor
+    def inner(*args, **kwargs):
+        cursor_pos = curses.getsyx()
+        result = func(*args, **kwargs)
+        curses.setsyx(*cursor_pos)
+        curses.doupdate()
+        return result
+
+    return inner
+
+@reset_cursor
 def command_mode(window, line=0, col=0):
     """
     Receive commands from the user on a vim-like command line.
@@ -116,6 +144,7 @@ def command_mode(window, line=0, col=0):
 
     return COMMAND_MAP.get(command, STATUS_CODES.ERROR)
 
+@reset_cursor
 def prompt_mode(window, prompt=":", line=0, col=0):
     """
     Prompt the user for further information.
@@ -155,6 +184,7 @@ def prompt_mode(window, prompt=":", line=0, col=0):
 
     return response
 
+@reset_cursor
 def status_message(window, message, color=COLOR_PAIRS["STATUS"], line=0, col=0):
     """
     Display a status message to the user.
@@ -181,14 +211,9 @@ def status_message(window, message, color=COLOR_PAIRS["STATUS"], line=0, col=0):
 
     message = message.strip()
 
-    cursor_pos = curses.getsyx()
-
     window.clear()
     window.addstr(line, col, message, curses.color_pair(color))
     window.refresh()
-
-    curses.setsyx(*cursor_pos)
-    curses.doupdate()
 
 if __name__ == '__main__':
     curses.wrapper(main)
