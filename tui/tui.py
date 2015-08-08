@@ -29,7 +29,9 @@ COLOR_PAIRS = {
         "NORMAL": 0,
         "ERROR": 1,
         "PROMPT": 2,
-        "STATUS": 3
+        "STATUS": 3,
+        "TITLE": 4,
+        "CURSOR": 5
 }
 
 def main(stdscr):
@@ -53,9 +55,16 @@ def main(stdscr):
     COMMAND_LINE = curses.LINES - 1
 
     # initialize color pairs
-    curses.init_pair(COLOR_PAIRS["ERROR"], curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(COLOR_PAIRS["PROMPT"], curses.COLOR_CYAN, curses.COLOR_BLACK)
-    curses.init_pair(COLOR_PAIRS["STATUS"], curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["ERROR"], curses.COLOR_RED,
+            curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["PROMPT"], curses.COLOR_CYAN,
+            curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["STATUS"], curses.COLOR_GREEN,
+            curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIRS["CURSOR"], curses.COLOR_WHITE,
+            curses.COLOR_BLUE)
+    curses.init_pair(COLOR_PAIRS["TITLE"], curses.COLOR_CYAN,
+            curses.COLOR_GREEN)
 
     command_win = curses.newwin(1, curses.COLS, COMMAND_LINE, LEFT)
 
@@ -68,11 +77,15 @@ def main(stdscr):
     display_list = itunes.get_playlist()
     status_message(command_win, "Got music.")
 
+    pad = load_list(display_list, TOP_LINE, LEFT, cols=RIGHT - LEFT)
+    pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+
     # continue until quit command is given
     while command != STATUS_CODES.EXIT:
 
         key = stdscr.getkey()
 
+        #stdscr.addstr(0, 0, "{}".format(command))
         # user wants to enter a command
         if key == ":":
             command = command_mode(command_win)
@@ -214,6 +227,142 @@ def status_message(window, message, color=COLOR_PAIRS["STATUS"], line=0, col=0):
     window.clear()
     window.addstr(line, col, message, curses.color_pair(color))
     window.refresh()
+
+def load_list(track_list, pad=None, corner_y=0, corner_x=0, lines=0, cols=0):
+    """
+    Load a list of tracks into a pad and display some of that pad.
+
+    All the tracks provided are loaded into the pad, however they will not all
+    be visible at once (depending on provided dimensions).
+
+    Parameters
+    ----------
+    track_list : list
+        A list of dictionaries, each of which represents a track to display.
+    pad : curses.WindowObject, optional
+        The pad to draw the list in. Defaults to None, which means a new pad
+        will be created to house the list.
+    corner_y : int, optional
+        The line on the screen at which to start the pad. Defaults to 0, which
+        is the top of the screen.
+    corner_x : int, optional
+        The column of the screen at which to start the pad. Defaults to 0, which
+        is the left of the screen.
+    lines : int, optional
+        The height of the pad in lines. Defaults to 0, which means the pad's
+        height should be determined by the number of tracks in `track_list`.
+    cols : int, optional
+        The width of the pad in columns. Defaults to 0, which means the pad will
+        be given the full width of the terminal (as given by `curses.COLS`).
+
+    Returns
+    -------
+    curses.WindowObject
+        The pad that has now been displayed on the screen.
+
+    .. warning::Don't change the table formatting unless you REALLY know what
+    you're doing; it's a fickle beast.
+    """
+
+    # return text truncated to max_len
+    def truncate(text, max_len, fill="..."):
+
+        if max_len == 0:
+            return ""
+
+        if max_len < len(fill):
+            fill = "~"
+
+        if len(text) > max_len:
+            end_len = max(0, max_len - len(fill))
+            text = text[:end_len] + fill
+
+        try:
+            assert len(text) <= max_len
+        except AssertionError:
+            raise AssertionError("{text} {max_len}".format(**locals()))
+        return text
+
+    BUFFER = 2 #minimum spacing between cloumns
+
+    # add one for the title
+    if lines == 0:
+        lines = len(track_list) + 1
+
+    if cols == 0 or cols > curses.COLS:
+        cols = curses.COLS
+
+    pad = curses.newpad(lines, cols)
+
+    fmts = []
+
+    fmts.append("{i:5}: {name}")
+    fmts.append("{album}")
+    fmts.append("{artist}")
+    fmts.append("[{time}]")
+
+    line_fmt = (
+        "{1[0]:<{0[0]}.{0[0]}}" # song name
+        "{1[1]:<{0[1]}.{0[1]}}" # album
+        "{1[2]:<{0[2]}.{0[2]}}" # artist
+        "{1[3]:>{0[3]}.{0[3]}}" # duration
+    )
+
+    #f = open("out.log", "w")
+    #f.write("COLS: {0}\n".format(cols))
+
+    end_width = 7 # desired width of final column
+
+    num_strings = len(fmts)
+
+    space = [(cols - end_width) // (num_strings - 1)] * (num_strings - 1)
+    space.append(cols - 1 - sum(space))
+
+    title_line = line_fmt.format(space, ["    Name", "Album", "Artist", "Time"])
+    pad.addstr(0, 0, title_line, curses.color_pair(COLOR_PAIRS["TITLE"]))
+
+    # add the tracks to the pad
+    for i, track in enumerate(track_list):
+        reversed = (i % 2) * curses.A_REVERSE
+
+        strings = []
+
+        # create formatted strings
+        for fmt in fmts:
+            strings.append(fmt.format(i=i+1, **track))
+
+        total_length = len(''.join(strings))
+
+        # if we're off by 1 or a couple, add space to ending string
+        while sum(space) < cols - 1:
+            #f.write("adding space...\n")
+            space[0] += 1
+
+        # if we're over, subtract
+        while sum(space) > cols - 1:
+            space[-1] -= 1
+
+        # truncate each field as necessary
+        for j in range(num_strings - 1):
+
+            # make it more clear that no album is given
+            if strings[j] == "None":
+                strings[j] = "[NONE]"
+            strings[j] = truncate(strings[j], space[j] - BUFFER)
+
+        #f.write("{0} : {1}\n".format(space, sum(space)))
+        #f.write("{0}\n".format(' '.join(strings)))
+
+        #f.write("space: {0}\n{1}\n{2}\n".format(space //3 -3 , left_str + mid_str + right_str, 40 * '-'))
+
+        line_str = line_fmt.format(space, strings)
+        line_str = line_str[:cols]
+
+        pad.addstr(i + 1, 0, line_str, reversed)
+
+    #f.close()
+
+    return pad
 
 if __name__ == '__main__':
     curses.wrapper(main)
