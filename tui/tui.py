@@ -90,7 +90,6 @@ def main(stdscr):
 
     f = open("out.log", "w")
 
-
     # continue until quit command is given
     while command != STATUS_CODES.EXIT:
 
@@ -129,6 +128,23 @@ def main(stdscr):
                 cursor_line -= 1
 
         # TODO jump to bottom/top of list
+
+        elif key == "\n": #play the song under the cursor
+            track_line = inchstr(display_pad, cursor_line, 0).strip()
+            #f.write("trying to match {}".format(track_line))
+            track_num = int(track_line[:track_line.find(":")]) - 1
+
+            track = display_list[track_num]
+
+            title = track["name"]
+            album = track["album"]
+            artist = track["artist"]
+            time = track["time"]
+
+            f.write("Trying to play: {}\n".format(title))
+            itunes.play_track(title)
+            msg = 'Playing "{0}" -- "{1}"'.format(title, artist)
+            status_message(command_win, "{0}".format(truncate(msg, RIGHT - LEFT)))
 
         else:
             #stdscr.addstr(0, 0, key)
