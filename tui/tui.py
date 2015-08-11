@@ -74,7 +74,7 @@ def main(stdscr):
     stdscr.refresh()
 
     status_message(command_win, "Fetching music...")
-    display_list = itunes.get_playlist()
+    display_list = itunes.get_playlist("ITC", key="artist")
     status_message(command_win, "Got music.")
 
     cursor_line = 1
@@ -295,8 +295,7 @@ def status_message(window, message, color=COLOR_PAIRS["STATUS"], line=0, col=0):
     window.addstr(line, col, message, curses.color_pair(color))
     window.refresh()
 
-def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
-        cols=0):
+def load_list(track_list, pad=None, corner_y=0, corner_x=0, lines=0, cols=0):
     """
     Load a list of tracks into a pad and display some of that pad.
 
@@ -316,10 +315,6 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
     corner_x : int, optional
         The column of the screen at which to start the pad. Defaults to 0, which
         is the left of the screen.
-    key : str, optional
-        The name of a key in the track dictionaries to use for sorting. If the
-        given argument is not a valid key, or if `None` is given, the current
-        iTunes sorting order will be used.
     lines : int, optional
         The height of the pad in lines. Defaults to 0, which means the pad's
         height should be determined by the number of tracks in `track_list`.
@@ -338,11 +333,6 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
 
 
     BUFFER = 2 #minimum spacing between cloumns
-
-    # sort tracks first (if needed)
-    if key in track_list[0]:
-        key_func = lambda track: track.__getitem__(key) or ""
-        track_list = sorted(track_list, key=key_func)
 
     # add one for the title
     if lines == 0:

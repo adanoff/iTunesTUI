@@ -51,7 +51,7 @@ def search(search_term):
 
     return out
 
-def get_playlist(name="Music"):
+def get_playlist(name="Music", key="name"):
     """
     Get all the songs in the playlist specified.
 
@@ -60,6 +60,11 @@ def get_playlist(name="Music"):
     name : str, optional
         The name of the playlist (defaults to "Music", which contains all
         music).
+    key : str, optional
+        The item in the track dictionary to be used for sorting the tracks.
+        Defaults to `name` (the track's title). If `key` is not a valid key in
+        the track dictionaries, or if `None` is passed, the current iTunes
+        sorting order will be used.
 
     Returns
     -------
@@ -82,9 +87,14 @@ def get_playlist(name="Music"):
     except AppleScriptError as ae:
         raise PlaylistError("No playlist named: {0}".format(name), name)
 
-    out = parse_response(out)
+    track_list = parse_response(out)
 
-    return out
+    # sort results
+    if key in track_list[0]:
+        key_func = lambda track: track.__getitem__(key) or ""
+        track_list = sorted(track_list, key=key_func)
+
+    return track_list
 
 def play():
     """
