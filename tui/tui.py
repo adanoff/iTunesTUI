@@ -77,15 +77,35 @@ def main(stdscr):
     display_list = itunes.get_playlist()
     status_message(command_win, "Got music.")
 
-    pad = load_list(display_list, TOP_LINE, LEFT, cols=RIGHT - LEFT)
-    pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+    cursor_line = 1
+
+    display_pad = load_list(display_list, TOP_LINE, LEFT, cols=RIGHT - LEFT)
+    display_pad.move(1, 0)
+    display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+
+    pad_top = 0
+    pad_rows = BOTTOM_LINE - TOP_LINE
+
+    cursor_bottom = len(display_list)
+
+    f = open("out.log", "w")
+
 
     # continue until quit command is given
     while command != STATUS_CODES.EXIT:
 
-        key = stdscr.getkey()
+        key = display_pad.getkey()
+        previous_line = cursor_line
+        current = display_pad.inch(cursor_line + 2, 0)
 
-        #stdscr.addstr(0, 0, "{}".format(command))
+        # convert arrow keys to their counterparts
+        if key == "":
+            next = display_pad.getkey() + display_pad.getkey()
+            if next == "[B":
+                key = "j"
+            elif next == "[A":
+                key = "k"
+
         # user wants to enter a command
         if key == ":":
             command = command_mode(command_win)
@@ -97,6 +117,53 @@ def main(stdscr):
 
             elif command == STATUS_CODES.SEARCH:
                 search_term = prompt_mode(command_win, prompt="Enter a search term: ")
+
+        elif key == "j": #move cursor down
+            #f.write("Recognized: {}\n".format(key))
+            if cursor_line < cursor_bottom:
+                cursor_line += 1
+
+        # FIXME for some reason going up (with k) moves the curses cursor down 1 then up 2
+        elif key == "k": #move cursor up
+            if cursor_line > 1:
+                cursor_line -= 1
+
+        # TODO jump to bottom/top of list
+
+        else:
+            #stdscr.addstr(0, 0, key)
+            f.write("UNRECOGNIZED: {}\n".format(key))
+
+        #current = display_pad.inch(cursor_line + 1, 0)
+        f.write("PRESSED: {}\n".format(key))
+
+        line_change = cursor_line - previous_line
+
+        # only redraw if we moved the cursor
+        if line_change:
+
+            # if we're off the screen now, scroll
+            if cursor_line > pad_top + pad_rows or cursor_line < pad_top:
+                pad_top += line_change
+
+            #f.write("BELOW CURSOR: {1} ({0}) ({0:b})\n".format(current, chr(current
+                #& 0xFF)))
+            #f.write("curses.A_REVERSE: {0} ({0:b})\n".format(curses.A_REVERSE))
+            reversed = current & curses.A_REVERSE
+            #f.write("REVERSED: {0} ({0:b})\n".format(reversed))
+            line_str = inchstr(display_pad, cursor_line - line_change, 0)
+
+            f.write("PREVIOUS LINE: {}\n".format(previous_line))
+            f.write("LINE CHANGE: {:+}\n".format(line_change))
+            f.write("CURSOR LINE: {}\n".format(cursor_line))
+
+            # remove cursor and redraw on next line
+            display_pad.addstr(previous_line, 0, line_str, reversed)
+            display_pad.move(cursor_line, 0)
+            display_pad.chgat(-1, curses.color_pair(COLOR_PAIRS["CURSOR"]))
+            display_pad.refresh(pad_top, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+
+    f.close()
 
 def reset_cursor(func):
     """
@@ -269,24 +336,6 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
     you're doing; it's a fickle beast.
     """
 
-    # return text truncated to max_len
-    def truncate(text, max_len, fill="..."):
-
-        if max_len == 0:
-            return ""
-
-        if max_len < len(fill):
-            fill = "~"
-
-        if len(text) > max_len:
-            end_len = max(0, max_len - len(fill))
-            text = text[:end_len] + fill
-
-        try:
-            assert len(text) <= max_len
-        except AssertionError:
-            raise AssertionError("{text} {max_len}".format(**locals()))
-        return text
 
     BUFFER = 2 #minimum spacing between cloumns
 
@@ -335,6 +384,10 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
     for i, track in enumerate(track_list):
         reversed = (i % 2) * curses.A_REVERSE
 
+        # place the cursor on the first line
+        if i == 0:
+            reversed = curses.color_pair(COLOR_PAIRS["CURSOR"])
+
         strings = []
 
         # create formatted strings
@@ -357,7 +410,7 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
 
             # make it more clear that no album is given
             if strings[j] == "None":
-                strings[j] = "[NONE]"
+                strings[j] = "-"
             strings[j] = truncate(strings[j], space[j] - BUFFER)
 
         #f.write("{0} : {1}\n".format(space, sum(space)))
@@ -373,6 +426,83 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, key="name", lines=0,
     #f.close()
 
     return pad
+
+@reset_cursor
+def inchstr(window, y, x):
+    """
+    Read a string from curses display at y, x until EOL.
+
+    Parameters
+    ----------
+    window : curses.WindowObject
+        The window to read from.
+    y : int
+        The row to read from in `window`.
+    x : int
+        The column to start reading from in row `y`
+
+    Returns
+    -------
+    str
+        The string read from the interface.
+    """
+
+    window.move(y, x)
+    result = []
+
+    in_char = ""
+
+    x_off = 0
+
+    # weird EOL character...
+    while in_char != "ÿ":
+        in_char = window.inch(y, x + x_off)
+        in_char = chr(in_char & 0xFF)
+
+        x_off += 1
+
+        result.append(in_char)
+
+    return ''.join(result[:-1])
+
+def truncate(text, max_len, fill="..."):
+    """
+    Truncate given text to a given maximum length.
+
+    Parameters
+    ----------
+    text : str
+        The text to truncate.
+    max_len : int
+        The maximum allowed length for `text`. If `text` is longer than
+        `max_len` it will be shortened, otherwise it will remain unchanged.
+    fill : str, optional
+        The string that should be displayed at the end of the truncated text to
+        indicate truncation. If `max_len` is too short, the fill may be omitted
+        or changed. Defaults to `...`.
+
+    Returns
+    -------
+    str
+        The truncated (or unchanged) text, of length no greater than `max_len`
+        (including any filling added at the end).
+    """
+
+    if max_len <= 0:
+        return ""
+
+    if max_len < len(fill):
+        fill = "~"
+
+    if len(text) > max_len:
+        end_len = max(0, max_len - len(fill))
+        text = text[:end_len] + fill
+
+    try:
+        assert len(text) <= max_len
+    except AssertionError:
+        raise AssertionError("{text} {max_len}".format(**locals()))
+    return text
 
 if __name__ == '__main__':
     curses.wrapper(main)
