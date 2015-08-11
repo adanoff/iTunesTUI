@@ -15,7 +15,7 @@ import re
 
 from .exceptions import AppleScriptError, TrackError
 
-def search(search_term):
+def search(search_term, key="name"):
     """
     Search the iTunes library.
 
@@ -26,6 +26,11 @@ def search(search_term):
     ----------
     search_term : str
         The string to search for in iTunes.
+    key : str, optional
+        The item in the track dictionary to be used for sorting the tracks.
+        Defaults to `name` (the track's title). If `key` is not a valid key in
+        the track dictionaries, or if `None` is passed, the current iTunes
+        sorting order will be used.
 
     Returns
     -------
@@ -47,9 +52,16 @@ def search(search_term):
     #print(search_template.format(term=search_term) + "\n")
 
     out = run_applescript(search_template.format(term=search_term))
-    out = parse_response(out)
 
-    return out
+    track_list = parse_response(out)
+
+    # sort results
+    if track_list:
+        if key in track_list[0]:
+            key_func = lambda track: track.__getitem__(key) or ""
+            track_list = sorted(track_list, key=key_func)
+
+    return track_list
 
 def get_playlist(name="Music", key="name"):
     """
@@ -90,9 +102,10 @@ def get_playlist(name="Music", key="name"):
     track_list = parse_response(out)
 
     # sort results
-    if key in track_list[0]:
-        key_func = lambda track: track.__getitem__(key) or ""
-        track_list = sorted(track_list, key=key_func)
+    if track_list:
+        if key in track_list[0]:
+            key_func = lambda track: track.__getitem__(key) or ""
+            track_list = sorted(track_list, key=key_func)
 
     return track_list
 
