@@ -95,7 +95,9 @@ def main(stdscr):
 
         key = display_pad.getkey()
         previous_line = cursor_line
-        current = display_pad.inch(cursor_line + 2, 0)
+
+        offset = 2
+        current = display_pad.inch(cursor_line + offset, 0)
 
         # convert arrow keys to their counterparts
         if key == "":
@@ -114,15 +116,30 @@ def main(stdscr):
                 status_message(command_win, "Invalid command entered",
                         color=COLOR_PAIRS["ERROR"])
 
+            # TODO implement searching
             elif command == STATUS_CODES.SEARCH:
-                search_term = prompt_mode(command_win, prompt="Enter a search term: ")
+                search_term = prompt_mode(command_win,
+                        prompt="Enter a search term: ")
+                display_list = itunes.search(search_term, keys=["artist",
+                    "album"])
+                #f.write("Search for '{0}' returned: {1}\n".format(search_term,
+                    #display_list))
+                display_pad.erase()
+                #f.write("Cleared\n")
+                cursor_bottom = len(display_list)
+                #f.write("Bottom: {}\n".format(cursor_bottom))
+                cursor_line = 1
+                previous_line = 1
+                display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+                display_pad = load_list(display_list, TOP_LINE, LEFT, cols=RIGHT - LEFT)
+                display_pad.move(1, 0)
+                display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
 
         elif key == "j": #move cursor down
             #f.write("Recognized: {}\n".format(key))
             if cursor_line < cursor_bottom:
                 cursor_line += 1
 
-        # FIXME for some reason going up (with k) moves the curses cursor down 1 then up 2
         elif key == "k": #move cursor up
             if cursor_line > 1:
                 cursor_line -= 1
@@ -167,6 +184,7 @@ def main(stdscr):
             #f.write("curses.A_REVERSE: {0} ({0:b})\n".format(curses.A_REVERSE))
             reversed = current & curses.A_REVERSE
             #f.write("REVERSED: {0} ({0:b})\n".format(reversed))
+
             line_str = inchstr(display_pad, cursor_line - line_change, 0)
 
             f.write("PREVIOUS LINE: {}\n".format(previous_line))
@@ -357,7 +375,7 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, lines=0, cols=0):
     if cols == 0 or cols > curses.COLS:
         cols = curses.COLS
 
-    pad = curses.newpad(lines, cols)
+    pad = curses.newpad(lines + 1, cols) # +1 for the dummy
 
     fmts = []
 
@@ -428,6 +446,9 @@ def load_list(track_list, pad=None, corner_y=0, corner_x=0, lines=0, cols=0):
         line_str = line_str[:cols]
 
         pad.addstr(i + 1, 0, line_str, reversed)
+
+    # add dummy row at the end
+    pad.addstr(len(track_list) + 1, 0, "")
 
     #f.close()
 
