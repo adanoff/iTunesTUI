@@ -12,6 +12,9 @@ work for Python 2.
 Tested in iTerm2, OS X Terminal, and xterm, though you may have to change your
 color scheme to be able to read everything.
 
+Tested in iTerm2, OS X Terminal, and xterm, though you may have to change your
+color scheme to be able to read everything.
+
 ## DISCLAIMER
 
 This project is in no way affiliated with Apple or iTunes. The appearance of any
@@ -27,15 +30,16 @@ on anything.
 * [*] Nice(ish) interface to view your library
 * [*] Search your library for songs, albums, playlists, etc.
 * [*] Play songs
-* Control song playback
 
 ## Screenshot
 
+<<<<<<< HEAD
 ![iTunesTUI in iTerm2](screenshot.png)
 
 ## Installation
 
 Clone from github!
+<<<<<<< HEAD
 `git clone https://github.com/adanoff/iTunesTUI`
 
 ## Running
