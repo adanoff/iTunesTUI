@@ -14,14 +14,16 @@ from enum import Enum
 from itunes import itunes
 
 """Status codes returned by `command_mode` to indicate an action."""
-STATUS_CODES = Enum("StatusCodes", "EXIT ERROR SEARCH")
+STATUS_CODES = Enum("StatusCodes", "EXIT ERROR SEARCH PLAYLIST")
 
 """Mapping of commands to actions."""
 COMMAND_MAP = {
         "q": STATUS_CODES.EXIT,
         "quit": STATUS_CODES.EXIT,
         "s": STATUS_CODES.SEARCH,
-        "search": STATUS_CODES.SEARCH
+        "search": STATUS_CODES.SEARCH,
+        "p": STATUS_CODES.PLAYLIST,
+        "playlist": STATUS_CODES.PLAYLIST
 }
 
 """Color pair codes for various types of output."""
@@ -34,6 +36,7 @@ COLOR_PAIRS = {
         "CURSOR": 5
 }
 
+# TODO add ability to go to playlists
 def main(stdscr):
     """
     Main controller function for the TUI.
@@ -70,7 +73,7 @@ def main(stdscr):
 
     command = None
 
-    stdscr.addstr(0, 0, "Hello, world!")
+    stdscr.addstr(0, 0, "Welcome to iTunesTUI")
     stdscr.refresh()
 
     status_message(command_win, "Fetching music...")
@@ -116,7 +119,6 @@ def main(stdscr):
                 status_message(command_win, "Invalid command entered",
                         color=COLOR_PAIRS["ERROR"])
 
-            # TODO implement searching
             elif command == STATUS_CODES.SEARCH:
                 search_term = prompt_mode(command_win,
                         prompt="Enter a search term: ")
@@ -128,6 +130,22 @@ def main(stdscr):
                 #f.write("Cleared\n")
                 cursor_bottom = len(display_list)
                 #f.write("Bottom: {}\n".format(cursor_bottom))
+                cursor_line = 1
+                previous_line = 1
+                display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+                display_pad = load_list(display_list, TOP_LINE, LEFT, cols=RIGHT - LEFT)
+                display_pad.move(1, 0)
+                display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
+
+            elif command == STATUS_CODES.PLAYLIST:
+                pl_name = prompt_mode(command_win,
+                        prompt="Enter a playlist name (empty for all music): ")
+
+                if not pl_name:
+                    pl_name = "Music"
+                display_list = itunes.get_playlist(pl_name, key="artist")
+                cursor_bottom = len(display_list)
+                display_pad.erase()
                 cursor_line = 1
                 previous_line = 1
                 display_pad.refresh(0, 0, TOP_LINE, LEFT, BOTTOM_LINE, RIGHT)
